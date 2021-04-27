@@ -35,10 +35,11 @@ import (
 	cmmeta "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	"github.com/jetstack/cert-manager/test/e2e/framework"
 	"github.com/jetstack/cert-manager/test/e2e/util"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type injectableTest struct {
-	makeInjectable func(namePrefix string) runtime.Object
+	makeInjectable func(namePrefix string) client.Object
 	getCAs         func(runtime.Object) [][]byte
 	subject        string
 	disabled       string
@@ -52,7 +53,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 
 	injectorContext := func(subj string, test *injectableTest) {
 		Context("for "+subj+"s", func() {
-			var toCleanup runtime.Object
+			var toCleanup client.Object
 
 			BeforeEach(func() {
 				By("creating a self-signing issuer")
@@ -76,7 +77,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 				}
 				Expect(f.CRClient.Delete(context.Background(), toCleanup)).To(Succeed())
 			})
-			generalSetup := func(injectable runtime.Object) (runtime.Object, certmanager.Certificate, corev1.Secret) {
+			generalSetup := func(injectable client.Object) (runtime.Object, certmanager.Certificate, corev1.Secret) {
 				By("creating a " + subj + " pointing to a cert")
 				Expect(f.CRClient.Create(context.Background(), injectable)).To(Succeed())
 				toCleanup = injectable
@@ -105,7 +106,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 					expectedCAs[i] = caData
 				}
 				Eventually(func() ([][]byte, error) {
-					newInjectable := injectable.DeepCopyObject()
+					newInjectable := injectable.DeepCopyObject().(client.Object)
 					if err := f.CRClient.Get(context.Background(), types.NamespacedName{Name: injectable.(metav1.Object).GetName()}, newInjectable); err != nil {
 						return nil, err
 					}
@@ -137,7 +138,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 				By("expecting the CA data to remain in place")
 				expectedCAs := test.getCAs(injectable)
 				Consistently(func() ([][]byte, error) {
-					newInjectable := injectable.DeepCopyObject()
+					newInjectable := injectable.DeepCopyObject().(client.Object)
 					if err := f.CRClient.Get(context.Background(), types.NamespacedName{Name: injectable.(metav1.Object).GetName()}, newInjectable); err != nil {
 						return nil, err
 					}
@@ -171,7 +172,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 					expectedCAs[i] = caData
 				}
 				Eventually(func() ([][]byte, error) {
-					newInjectable := injectable.DeepCopyObject()
+					newInjectable := injectable.DeepCopyObject().(client.Object)
 					if err := f.CRClient.Get(context.Background(), types.NamespacedName{Name: injectable.(metav1.Object).GetName()}, newInjectable); err != nil {
 						return nil, err
 					}
@@ -194,7 +195,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 				By("expecting the CA data to remain in place")
 				expectedCAs := test.getCAs(injectable)
 				Consistently(func() ([][]byte, error) {
-					newInjectable := injectable.DeepCopyObject()
+					newInjectable := injectable.DeepCopyObject().(client.Object)
 					if err := f.CRClient.Get(context.Background(), types.NamespacedName{Name: injectable.(metav1.Object).GetName()}, newInjectable); err != nil {
 						return nil, err
 					}
@@ -225,7 +226,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 					expectedCAs[i] = caData
 				}
 				Eventually(func() ([][]byte, error) {
-					newInjectable := injectable.DeepCopyObject()
+					newInjectable := injectable.DeepCopyObject().(client.Object)
 					if err := f.CRClient.Get(context.Background(), types.NamespacedName{Name: injectable.(metav1.Object).GetName()}, newInjectable); err != nil {
 						return nil, err
 					}
@@ -296,7 +297,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 					expectedCAs[i] = nil
 				}
 				Consistently(func() ([][]byte, error) {
-					newInjectable := injectable.DeepCopyObject()
+					newInjectable := injectable.DeepCopyObject().(client.Object)
 					if err := f.CRClient.Get(context.Background(), types.NamespacedName{Name: injectable.(metav1.Object).GetName()}, newInjectable); err != nil {
 						return nil, err
 					}
@@ -309,7 +310,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 	sideEffectsNone := admissionreg.SideEffectClassNone
 
 	injectorContext("validating webhook", &injectableTest{
-		makeInjectable: func(namePrefix string) runtime.Object {
+		makeInjectable: func(namePrefix string) client.Object {
 			someURL := "https://localhost:8675"
 			return &admissionreg.ValidatingWebhookConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -352,7 +353,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 	})
 
 	injectorContext("mutating webhook", &injectableTest{
-		makeInjectable: func(namePrefix string) runtime.Object {
+		makeInjectable: func(namePrefix string) client.Object {
 			someURL := "https://localhost:8675"
 			return &admissionreg.MutatingWebhookConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -397,7 +398,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 	// TODO(directxman12): enable ConversionWebhook feature on the test infra,
 	// re-enable this.
 	injectorContext("conversion webhook", &injectableTest{
-		makeInjectable: func(namePrefix string) runtime.Object {
+		makeInjectable: func(namePrefix string) client.Object {
 			someURL := "https://localhost:8675"
 			return &apiext.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{
@@ -439,7 +440,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 	})
 
 	injectorContext("api service", &injectableTest{
-		makeInjectable: func(namePrefix string) runtime.Object {
+		makeInjectable: func(namePrefix string) client.Object {
 			return &apireg.APIService{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "v1." + namePrefix + ".testing.cert-manager.io",
