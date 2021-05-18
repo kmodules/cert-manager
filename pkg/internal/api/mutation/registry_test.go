@@ -228,7 +228,7 @@ func TestMutate(t *testing.T) {
 				},
 			},
 			expErr:   false,
-			expPatch: []byte(`[{"op":"replace","path":"/spec/request","value":"bXV0YXRpb24gY2FsbGVk"}]`),
+			expPatch: []byte(`[{"op":"add","path":"/spec/request","value":"bXV0YXRpb24gY2FsbGVk"}]`),
 		},
 		"if update mutation function registered for kind, run mutation": {
 			mutations: []mutationsEntry{
@@ -263,7 +263,7 @@ func TestMutate(t *testing.T) {
 				},
 			},
 			expErr:   false,
-			expPatch: []byte(`[{"op":"replace","path":"/spec/request","value":"bXV0YXRpb24gY2FsbGVk"}]`),
+			expPatch: []byte(`[{"op":"add","path":"/spec/request","value":"bXV0YXRpb24gY2FsbGVk"}]`),
 		},
 		"if multiple create mutation functions registered for kind, run mutation": {
 			mutations: []mutationsEntry{
@@ -307,7 +307,7 @@ func TestMutate(t *testing.T) {
 				},
 			},
 			expErr:   false,
-			expPatch: []byte(`[{"op":"add","path":"/metadata/annotations","value":{"second-mutation":"called"}},{"op":"replace","path":"/spec/request","value":"bXV0YXRpb24gY2FsbGVk"}]`),
+			expPatch: []byte(`[{"op":"add","path":"/metadata/annotations","value":{"second-mutation":"called"}},{"op":"add","path":"/spec/request","value":"bXV0YXRpb24gY2FsbGVk"}]`),
 		},
 		"if multiple update mutation function registered for kind, run mutation": {
 			mutations: []mutationsEntry{
@@ -354,7 +354,7 @@ func TestMutate(t *testing.T) {
 				},
 			},
 			expErr:   false,
-			expPatch: []byte(`[{"op":"add","path":"/metadata/annotations","value":{"second-mutation":"called"}},{"op":"replace","path":"/spec/request","value":"bXV0YXRpb24gY2FsbGVk"}]`),
+			expPatch: []byte(`[{"op":"add","path":"/metadata/annotations","value":{"second-mutation":"called"}},{"op":"add","path":"/spec/request","value":"bXV0YXRpb24gY2FsbGVk"}]`),
 		},
 	}
 
